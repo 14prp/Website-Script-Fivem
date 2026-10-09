@@ -6,23 +6,27 @@ import { Avatar } from "@heroui/avatar";
 
 import prisma from "@/lib/prisma";
 import { normalizeEmbedURL } from "@/lib/youtube";
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function Home() {
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      version: true,
-      name: true,
-      description: true,
-      points: true,
-      imageURL: true,
-      embedURL: true,
-      isFeatured: true,
-    },
-    take: 6,
-  });
+  const [products, settings] = await Promise.all([
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        version: true,
+        name: true,
+        description: true,
+        points: true,
+        imageURL: true,
+        embedURL: true,
+        isFeatured: true,
+      },
+      take: 6,
+    }),
+    getSiteSettings(),
+  ]);
 
   const features = [
     {
@@ -106,11 +110,11 @@ export default async function Home() {
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center text-center mt-12 gap-8">
         <div className="flex flex-col items-center gap-4">
-          <h1 className="text-4xl md:text-6xl font-bold">CODEX DEVELOPER</h1>
-          <p className="text-default-500 max-w-2xl text-lg px-4 leading-relaxed">
-            มิติใหม่ในการเขียนสคริปต์สำหรับเซิร์ฟเวอร์ของคุณ
-            ออกแบบมาเพื่อความง่ายในการใช้งาน <br className="hidden sm:block" />{" "}
-            ความเร็ว และความปลอดภัย พร้อมคุณภาพงานที่เราส่งมอบให้คุณ
+          <h1 className="text-4xl md:text-6xl font-bold uppercase">
+            {settings.heroTitle || settings.name}
+          </h1>
+          <p className="text-default-500 max-w-2xl text-lg px-4 leading-relaxed whitespace-pre-line">
+            {settings.heroSubtitle || settings.description}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mt-2">
@@ -119,14 +123,14 @@ export default async function Home() {
             isExternal
             as={Link}
             className="w-40 bg-default-500/5 border border-default-800/10 text-default-700 !font-medium group transition-all duration-300 hover:scale-[1.03]"
-            href="https://discord.gg/msc-fivem"
+            href={settings.discordUrl || "https://discord.gg/msc-fivem"}
             radius="full"
             variant="solid"
           >
             <div className="relative flex items-center justify-center gap-2 w-full h-full">
               <span className="relative inline-block overflow-hidden h-5 leading-5 w-[80px]">
                 <span className="block transition-transform duration-300 group-hover:-translate-y-full">
-                  Contact Us
+                  {settings.contactButtonText || "Contact Us"}
                 </span>
                 <span className="absolute inset-0 transition-transform duration-300 translate-y-full group-hover:translate-y-0 font-bold">
                   Click
@@ -333,16 +337,16 @@ export default async function Home() {
               isBordered
               className="w-28 h-28 text-large shadow-xl border-4 border-default-100"
               color="primary"
-              name="Fxw"
-              src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4"
+              name={settings.teamName || "CodeX System"}
+              src={settings.teamAvatar || undefined}
             />
             <div className="flex flex-col gap-1 mt-2">
-              <h3 className="text-xl font-bold">CodeX System</h3>
+              <h3 className="text-xl font-bold">{settings.teamName || "CodeX System"}</h3>
               <p className="text-sm font-medium text-primary">
-                UI / Website / Script Developer
+                {settings.teamRole || "UI / Website / Script Developer"}
               </p>
               <p className="text-sm text-default-500 mt-2">
-                ออกแบบ UI ที่ดูสะอาดและเข้าใจง่าย
+                {settings.teamDescription || "ออกแบบ UI ที่ดูสะอาดและเข้าใจง่าย"}
               </p>
             </div>
             <div className="flex gap-4 mt-2">

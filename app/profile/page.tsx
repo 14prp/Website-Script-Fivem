@@ -372,10 +372,17 @@ function TopUpContent({
   upload,
   onSelectFile,
   onClear,
+  settings,
 }: {
   upload: UploadState;
   onSelectFile: (file: File | null) => void;
   onClear: () => void;
+  settings?: {
+    bankAccountName?: string;
+    bankPromptpayNo?: string;
+    bankName?: string;
+    promptpayQrUrl?: string;
+  };
 }) {
   const fileName = upload.file?.name ?? "";
 
@@ -412,22 +419,36 @@ function TopUpContent({
           </div>
         </CardHeader>
         <CardBody className="pt-0">
-          <div className="w-full aspect-square max-w-[360px] mx-auto rounded-2xl border border-default-200 dark:border-white/10 overflow-hidden shadow-inner">
-            <QrPlaceholder />
+          <div className="w-full aspect-square max-w-[360px] mx-auto rounded-2xl border border-default-200 dark:border-white/10 overflow-hidden shadow-inner flex items-center justify-center bg-white">
+            {settings?.promptpayQrUrl ? (
+              <img
+                alt="PromptPay QR"
+                className="w-full h-full object-contain p-4"
+                src={settings.promptpayQrUrl}
+              />
+            ) : (
+              <QrPlaceholder />
+            )}
           </div>
           <Divider className="my-6" />
           <div className="text-sm text-default-600 dark:text-default-400 space-y-1">
             <div className="flex items-center justify-between gap-4">
               <span className="text-default-500">ชื่อบัญชี</span>
-              <span className="font-medium">CODEx Developer</span>
+              <span className="font-medium">
+                {settings?.bankAccountName || "CODEX Developer"}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-default-500">PromptPay</span>
-              <span className="font-medium">xxx-xxx-xxxx</span>
+              <span className="font-medium">
+                {settings?.bankPromptpayNo || "xxx-xxx-xxxx"}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-default-500">ธนาคาร</span>
-              <span className="font-medium">กสิกรไทย (KBank)</span>
+              <span className="font-medium">
+                {settings?.bankName || "กสิกรไทย (KBank)"}
+              </span>
             </div>
           </div>
         </CardBody>
@@ -546,6 +567,21 @@ export default function ProfilePage() {
   const [upload, setUpload] = useState<UploadState>({ file: null });
   const [licenses, setLicenses] = useState<LicenseItem[]>([]);
   const [isLoadingLicenses, setIsLoadingLicenses] = useState(false);
+  const [siteSettings, setSiteSettings] = useState<{
+    bankAccountName?: string;
+    bankPromptpayNo?: string;
+    bankName?: string;
+    promptpayQrUrl?: string;
+  }>({});
+
+  useEffect(() => {
+    fetch("/api/settings", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setSiteSettings(data);
+      })
+      .catch(() => null);
+  }, []);
 
   const displayName = useMemo(() => {
     const name = session?.user?.name?.trim();
@@ -700,6 +736,7 @@ export default function ProfilePage() {
           />
         ) : selectedTab === "topup" ? (
           <TopUpContent
+            settings={siteSettings}
             upload={upload}
             onClear={() => setUpload({ file: null })}
             onSelectFile={(file) => setUpload({ file })}

@@ -1,49 +1,8 @@
 import { NextResponse } from "next/server";
-
-import { siteConfig } from "@/config/site";
 import { requireAdmin } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSiteSettings, saveSiteSettings } from "@/lib/settings";
 
-const NAME_KEY = "site_name";
-const DESCRIPTION_KEY = "site_description";
-
-async function getSettings() {
-  try {
-    const rows = await prisma.siteSetting.findMany({
-      where: { key: { in: [NAME_KEY, DESCRIPTION_KEY] } },
-      select: { key: true, value: true },
-    });
-
-    const map = new Map(rows.map((r) => [r.key, r.value]));
-
-    return {
-      name: map.get(NAME_KEY) ?? siteConfig.name,
-      description: map.get(DESCRIPTION_KEY) ?? siteConfig.description,
-    };
-  } catch {
-    return { name: siteConfig.name, description: siteConfig.description };
-  }
-}
-
-async function setSettings(input: { name: string; description: string }) {
-  const name = input.name.trim() || siteConfig.name;
-  const description = input.description.trim() || siteConfig.description;
-
-  await prisma.$transaction([
-    prisma.siteSetting.upsert({
-      where: { key: NAME_KEY },
-      create: { key: NAME_KEY, value: name },
-      update: { value: name },
-    }),
-    prisma.siteSetting.upsert({
-      where: { key: DESCRIPTION_KEY },
-      create: { key: DESCRIPTION_KEY, value: description },
-      update: { value: description },
-    }),
-  ]);
-
-  return { name, description };
-}
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const session = await requireAdmin();
@@ -52,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const settings = await getSettings();
+  const settings = await getSiteSettings();
 
   return NextResponse.json(settings);
 }
@@ -64,20 +23,18 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json().catch(() => null)) as {
-    name?: unknown;
-    description?: unknown;
-  } | null;
+  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
 
-  const name = typeof body?.name === "string" ? body.name : "";
-  const description =
-    typeof body?.description === "string" ? body.description : "";
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
 
   try {
-    const updated = await setSettings({ name, description });
+    const updated = await saveSiteSettings(body);
 
     return NextResponse.json(updated);
-  } catch {
-    return NextResponse.json({ error: "Database not ready" }, { status: 500 });
+  } catch (error) {
+    console.error("Save settings error:", error);
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 }

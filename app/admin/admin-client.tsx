@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@heroui/button";
 import { Card, CardBody } from "@heroui/card";
 import { Divider } from "@heroui/divider";
-import { Input } from "@heroui/input";
+import { Input, Textarea } from "@heroui/input";
+import { Avatar } from "@heroui/avatar";
 import { Tab, Tabs } from "@heroui/tabs";
 import {
   Modal,
@@ -24,7 +25,23 @@ import {
 
 type SiteSettings = {
   name: string;
+  shortName: string;
   description: string;
+  logoUrl: string;
+  discordUrl: string;
+  contactButtonText: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  footerCopyright: string;
+  footerPoweredBy: string;
+  teamName: string;
+  teamRole: string;
+  teamDescription: string;
+  teamAvatar: string;
+  bankAccountName: string;
+  bankPromptpayNo: string;
+  bankName: string;
+  promptpayQrUrl: string;
 };
 
 type AdminUser = {
@@ -124,10 +141,27 @@ export default function AdminClient() {
   const [tab, setTab] = useState<string>("settings");
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [successText, setSuccessText] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<SiteSettings>({
     name: "",
+    shortName: "",
     description: "",
+    logoUrl: "",
+    discordUrl: "",
+    contactButtonText: "",
+    heroTitle: "",
+    heroSubtitle: "",
+    footerCopyright: "",
+    footerPoweredBy: "",
+    teamName: "",
+    teamRole: "",
+    teamDescription: "",
+    teamAvatar: "",
+    bankAccountName: "",
+    bankPromptpayNo: "",
+    bankName: "",
+    promptpayQrUrl: "",
   });
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -203,6 +237,7 @@ export default function AdminClient() {
   const onSaveSettings = useCallback(async () => {
     setIsLoading(true);
     setErrorText(null);
+    setSuccessText(null);
 
     try {
       const updated = await apiJson<SiteSettings>("/api/admin/settings", {
@@ -211,6 +246,8 @@ export default function AdminClient() {
       });
 
       setSettings(updated);
+      setSuccessText("บันทึกการตั้งค่าเว็บไซต์เรียบร้อยแล้ว");
+      setTimeout(() => setSuccessText(null), 3500);
     } catch (e) {
       setErrorText(e instanceof Error ? e.message : "บันทึกไม่สำเร็จ");
     } finally {
@@ -588,67 +625,428 @@ export default function AdminClient() {
       </div>
 
       {errorText ? (
-        <Card className="border border-danger/30 bg-danger/10">
+        <Card className="border border-danger/30 bg-danger/10" shadow="none">
           <CardBody className="text-danger text-sm">{errorText}</CardBody>
         </Card>
       ) : null}
 
-      {tab === "settings" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10">
-            <CardBody className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">ข้อมูลเว็บไซต์</h2>
-                <Button
-                  color="primary"
-                  isLoading={isLoading}
-                  onPress={onSaveSettings}
-                >
-                  บันทึก
-                </Button>
-              </div>
-              <Divider />
-              <Input
-                label="ชื่อเว็บ"
-                placeholder="เช่น CODEX DEVELOPER"
-                value={settings.name}
-                variant="bordered"
-                onValueChange={(v) => setSettings((p) => ({ ...p, name: v }))}
-              />
-              <Input
-                label="คำอธิบายเว็บ"
-                placeholder="คำอธิบายสั้นๆ"
-                value={settings.description}
-                variant="bordered"
-                onValueChange={(v) =>
-                  setSettings((p) => ({ ...p, description: v }))
-                }
-              />
-            </CardBody>
-          </Card>
+      {successText ? (
+        <Card className="border border-success/30 bg-success/10" shadow="none">
+          <CardBody className="text-success text-sm flex items-center gap-2">
+            <svg
+              className="w-4 h-4 text-success"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            {successText}
+          </CardBody>
+        </Card>
+      ) : null}
 
-          <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10">
-            <CardBody className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">การตั้งค่าแอดมิน</h2>
-              <Divider />
-              <div className="text-sm text-default-500 space-y-1">
-                <p>
-                  กำหนด Discord ID ของแอดมินได้ด้วยตัวแปร{" "}
-                  <span className="font-medium text-default-600 dark:text-default-400">
-                    ADMIN_DISCORD_ID
-                  </span>
-                </p>
-                <p>
-                  เมื่อผู้ใช้งาน Discord ID ตรงกัน จะถูกตั้งเป็น admin อัตโนมัติ
-                </p>
-              </div>
-            </CardBody>
-          </Card>
+      {tab === "settings" ? (
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-default-50/50 dark:bg-white/[0.03] border border-default-200/70 dark:border-white/10">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold">จัดการการตั้งค่าเว็บไซต์</h2>
+              <p className="text-xs sm:text-sm text-default-500">
+                กำหนดชื่อเว็บ โลโก้ ข้อความ ส่วนหัว ลิงก์ Discord ข้อมูลทีมงาน และบัญชีธนาคารได้ที่นี่
+              </p>
+            </div>
+            <Button
+              color="primary"
+              size="sm"
+              className="font-medium shadow-none px-4 shrink-0"
+              isLoading={isLoading}
+              onPress={onSaveSettings}
+            >
+              บันทึกการตั้งค่า
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 1. แบรนด์และชื่อเว็บ */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">ข้อมูลแบรนด์ & ชื่อเว็บไซต์</h3>
+                    <p className="text-xs text-default-500">แสดงใน Navbar, Footer และ Tab Browser</p>
+                  </div>
+                </div>
+                <Divider />
+
+                <Input
+                  label="ชื่อเว็บไซต์ (Site Name)"
+                  placeholder="เช่น CODEX DEVELOPER"
+                  value={settings.name}
+                  variant="bordered"
+                  description="ชื่อหลักของเว็บไซต์ที่จะแสดงในส่วนต่างๆ"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, name: v }))}
+                />
+
+                <Input
+                  label="ตัวย่อ / สัญลักษณ์โลโก้ (Short Name)"
+                  placeholder="เช่น CX"
+                  value={settings.shortName}
+                  variant="bordered"
+                  description="ตัวอักษรย่อที่แสดงในกล่องสัญลักษณ์ไอคอน (1-3 ตัวอักษร)"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, shortName: v }))}
+                />
+
+                <Textarea
+                  label="คำอธิบายเว็บไซต์ (Site Description)"
+                  placeholder="คำอธิบายโดยย่อของเว็บไซต์..."
+                  value={settings.description}
+                  variant="bordered"
+                  minRows={3}
+                  description="แสดงใน Footer และ SEO Meta Description"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, description: v }))}
+                />
+
+                {/* Preview Badge */}
+                <div className="p-3 rounded-xl bg-default-100/50 dark:bg-white/[0.02] border border-default-200/40 dark:border-white/5 flex items-center gap-3">
+                  <span className="text-xs text-default-400 font-medium">ตัวอย่าง Navbar Brand:</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20 border border-white/10 flex items-center justify-center">
+                      <span className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 uppercase">
+                        {settings.shortName || "CX"}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold uppercase text-foreground">
+                      {settings.name || "CODEX DEVELOPER"}
+                    </span>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* 2. ส่วนหัวหน้าแรก (Hero Section) */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-secondary/10 text-secondary">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">ส่วนหัวหน้าแรก (Hero Section)</h3>
+                    <p className="text-xs text-default-500">ข้อความตัวใหญ่ต้อนรับผู้ใช้งานที่หน้าแรก</p>
+                  </div>
+                </div>
+                <Divider />
+
+                <Input
+                  label="หัวข้อหลักหน้าแรก (Hero Title)"
+                  placeholder="เช่น CODEX DEVELOPER (เว้นว่างเพื่อใช้ชื่อเว็บ)"
+                  value={settings.heroTitle}
+                  variant="bordered"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, heroTitle: v }))}
+                />
+
+                <Textarea
+                  label="คำอธิบายย่อยหน้าแรก (Hero Subtitle)"
+                  placeholder="เช่น มิติใหม่ในการเขียนสคริปต์สำหรับเซิร์ฟเวอร์ของคุณ..."
+                  value={settings.heroSubtitle}
+                  variant="bordered"
+                  minRows={3}
+                  onValueChange={(v) => setSettings((p) => ({ ...p, heroSubtitle: v }))}
+                />
+
+                <Input
+                  label="ข้อความปุ่มติดต่อ (Contact Button Text)"
+                  placeholder="เช่น Contact Us หรือ ติดต่อเรา"
+                  value={settings.contactButtonText}
+                  variant="bordered"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, contactButtonText: v }))
+                  }
+                />
+              </CardBody>
+            </Card>
+
+            {/* 3. ลิงก์ & ข้อมูลท้ายเว็บ (Links & Footer) */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-success/10 text-success">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">ลิงก์ & ข้อมูลท้ายเว็บ (Footer)</h3>
+                    <p className="text-xs text-default-500">ลิงก์ดิสคอร์ดและข้อมูลลิขสิทธิ์</p>
+                  </div>
+                </div>
+                <Divider />
+
+                <Input
+                  label="ลิงก์ Discord (Discord URL)"
+                  placeholder="เช่น https://discord.gg/..."
+                  value={settings.discordUrl}
+                  variant="bordered"
+                  description="ใช้สำหรับปุ่มใน Navbar, ปุ่ม Contact Us และลิงก์ใน Footer"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, discordUrl: v }))}
+                />
+
+                <Input
+                  label="ข้อความลิขสิทธิ์ (Footer Copyright)"
+                  placeholder="เช่น CodeX Developer"
+                  value={settings.footerCopyright}
+                  variant="bordered"
+                  description="จะแสดงในรูปแบบ: © 2026 [ข้อความลิขสิทธิ์]. All rights reserved."
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, footerCopyright: v }))
+                  }
+                />
+
+                <Input
+                  label="Powered By"
+                  placeholder="เช่น d14"
+                  value={settings.footerPoweredBy}
+                  variant="bordered"
+                  description="แสดงที่มุมขวาล่างของ Footer"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, footerPoweredBy: v }))
+                  }
+                />
+              </CardBody>
+            </Card>
+
+            {/* 4. ข้อมูลทีมงาน / ผู้พัฒนา (Team Developer Card) */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-warning/10 text-warning">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">ข้อมูลทีมงาน / ผู้พัฒนา</h3>
+                    <p className="text-xs text-default-500">การ์ดแนะนำทีมงานที่แสดงด้านล่างของหน้าแรก</p>
+                  </div>
+                </div>
+                <Divider />
+
+                <Input
+                  label="ชื่อทีมงาน / ผู้พัฒนา (Team Name)"
+                  placeholder="เช่น CodeX System"
+                  value={settings.teamName}
+                  variant="bordered"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, teamName: v }))}
+                />
+
+                <Input
+                  label="ตำแหน่ง / บทบาท (Role)"
+                  placeholder="เช่น UI / Website / Script Developer"
+                  value={settings.teamRole}
+                  variant="bordered"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, teamRole: v }))}
+                />
+
+                <Input
+                  label="คำอธิบายทีมงาน (Description)"
+                  placeholder="เช่น ออกแบบ UI ที่ดูสะอาดและเข้าใจง่าย"
+                  value={settings.teamDescription}
+                  variant="bordered"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, teamDescription: v }))
+                  }
+                />
+
+                <Input
+                  label="URL รูปโปรไฟล์ทีมงาน (Avatar URL)"
+                  placeholder="https://..."
+                  value={settings.teamAvatar}
+                  variant="bordered"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, teamAvatar: v }))}
+                />
+
+                {/* Team Card Preview */}
+                <div className="p-4 rounded-xl bg-default-100/50 dark:bg-white/[0.02] border border-default-200/40 dark:border-white/5 flex items-center gap-4">
+                  <Avatar
+                    isBordered
+                    className="w-14 h-14"
+                    color="primary"
+                    name={settings.teamName || "Team"}
+                    src={settings.teamAvatar || undefined}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-foreground">
+                      {settings.teamName || "CodeX System"}
+                    </span>
+                    <span className="text-xs text-primary font-medium">
+                      {settings.teamRole || "UI / Website / Script Developer"}
+                    </span>
+                    <span className="text-xs text-default-500 mt-0.5 line-clamp-1">
+                      {settings.teamDescription || "คำอธิบายทีมงาน..."}
+                    </span>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* 5. บัญชีรับเงิน / พร้อมเพย์ (Payment / Top-up) */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-danger/10 text-danger">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">ข้อมูลบัญชีชำระเงิน (หน้า Profile เติมเงิน)</h3>
+                    <p className="text-xs text-default-500">แสดงข้อมูลและ QR Code สำหรับให้ลูกค้าโอนเงิน</p>
+                  </div>
+                </div>
+                <Divider />
+
+                <Input
+                  label="ชื่อบัญชี (Account Name)"
+                  placeholder="เช่น CODEX Developer"
+                  value={settings.bankAccountName}
+                  variant="bordered"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, bankAccountName: v }))
+                  }
+                />
+
+                <Input
+                  label="หมายเลขพร้อมเพย์ (PromptPay No.)"
+                  placeholder="เช่น 08x-xxx-xxxx หรือ เลขบัตร/เบอร์"
+                  value={settings.bankPromptpayNo}
+                  variant="bordered"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, bankPromptpayNo: v }))
+                  }
+                />
+
+                <Input
+                  label="ชื่อธนาคาร (Bank Name)"
+                  placeholder="เช่น กสิกรไทย (KBank)"
+                  value={settings.bankName}
+                  variant="bordered"
+                  onValueChange={(v) => setSettings((p) => ({ ...p, bankName: v }))}
+                />
+
+                <Input
+                  label="URL รูป QR Code พร้อมเพย์ (PromptPay QR Image URL)"
+                  placeholder="https://... หรือ /images/qr.png (เว้นว่างเพื่อใช้ QR ตัวอย่าง)"
+                  value={settings.promptpayQrUrl}
+                  variant="bordered"
+                  onValueChange={(v) =>
+                    setSettings((p) => ({ ...p, promptpayQrUrl: v }))
+                  }
+                />
+              </CardBody>
+            </Card>
+
+            {/* 6. ข้อมูลแอดมิน */}
+            <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
+              <CardBody className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-default-100 text-default-600">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold">การตั้งค่าสิทธิ์แอดมิน</h3>
+                    <p className="text-xs text-default-500">การเข้าถึงระบบจัดการหลังบ้าน</p>
+                  </div>
+                </div>
+                <Divider />
+                <div className="text-sm text-default-500 space-y-2">
+                  <p>
+                    กำหนด Discord ID ของแอดมินผ่านตัวแปรในไฟล์ <code className="text-primary font-mono bg-primary/10 px-1 py-0.5 rounded">.env</code>:
+                  </p>
+                  <p className="font-mono text-xs p-2 rounded-lg bg-black/30 text-default-400">
+                    ADMIN_DISCORD_ID=1286014014438113362
+                  </p>
+                  <p className="text-xs text-default-400">
+                    เมื่อผู้ใช้งานล็อกอินด้วย Discord ID ที่ตรงกัน จะได้รับสิทธิ์ admin ทันที
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
         </div>
       ) : null}
 
       {tab === "users" ? (
-        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10">
+        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
           <CardBody>
             <Table removeWrapper aria-label="Users">
               <TableHeader>
@@ -699,7 +1097,7 @@ export default function AdminClient() {
       ) : null}
 
       {tab === "licenses" ? (
-        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10">
+        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
           <CardBody>
             <Table removeWrapper aria-label="Licenses">
               <TableHeader>
@@ -785,7 +1183,7 @@ export default function AdminClient() {
       ) : null}
 
       {tab === "products" ? (
-        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10">
+        <Card className="bg-default-50/40 dark:bg-black/20 border border-default-200/70 dark:border-white/10" shadow="none">
           <CardBody>
             <Table removeWrapper aria-label="Products">
               <TableHeader>
@@ -842,6 +1240,9 @@ export default function AdminClient() {
 
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "shadow-none border border-default-200/70 dark:border-white/10",
+        }}
         isOpen={isLicenseModalOpen}
         size="lg"
         onOpenChange={setIsLicenseModalOpen}
@@ -915,6 +1316,9 @@ export default function AdminClient() {
 
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "shadow-none border border-default-200/70 dark:border-white/10",
+        }}
         isOpen={isUserModalOpen}
         size="lg"
         onOpenChange={setIsUserModalOpen}
@@ -940,7 +1344,7 @@ export default function AdminClient() {
                     />
                     <div className="flex items-center gap-2">
                       <Button
-                        className="flex-1"
+                        className="flex-1 shadow-none"
                         color={editUserRole === "user" ? "primary" : "default"}
                         variant={editUserRole === "user" ? "solid" : "bordered"}
                         onPress={() => setEditUserRole("user")}
@@ -948,7 +1352,7 @@ export default function AdminClient() {
                         user
                       </Button>
                       <Button
-                        className="flex-1"
+                        className="flex-1 shadow-none"
                         color={editUserRole === "admin" ? "primary" : "default"}
                         variant={
                           editUserRole === "admin" ? "solid" : "bordered"
@@ -967,6 +1371,7 @@ export default function AdminClient() {
                 </Button>
                 <Button
                   color="primary"
+                  className="shadow-none"
                   isLoading={isLoading}
                   onPress={onSaveUser}
                 >
@@ -980,6 +1385,9 @@ export default function AdminClient() {
 
       <Modal
         backdrop="blur"
+        classNames={{
+          base: "shadow-none border border-default-200/70 dark:border-white/10",
+        }}
         isOpen={isProductModalOpen}
         size="2xl"
         onOpenChange={(open) => {

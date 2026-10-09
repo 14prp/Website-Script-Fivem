@@ -5,36 +5,19 @@ import clsx from "clsx";
 
 import { Providers } from "./providers";
 
-import { siteConfig } from "@/config/site";
 import { lineSeed } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
-import prisma from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
-  let name = siteConfig.name;
-  let description = siteConfig.description;
-
-  try {
-    const rows = await prisma.siteSetting.findMany({
-      where: { key: { in: ["site_name", "site_description"] } },
-      select: { key: true, value: true },
-    });
-
-    const map = new Map(rows.map((r) => [r.key, r.value]));
-
-    name = map.get("site_name") ?? name;
-    description = map.get("site_description") ?? description;
-  } catch {
-    name = siteConfig.name;
-    description = siteConfig.description;
-  }
+  const settings = await getSiteSettings();
 
   return {
     title: {
-      default: name,
-      template: `%s - ${name}`,
+      default: settings.name,
+      template: `%s - ${settings.name}`,
     },
-    description,
+    description: settings.description,
     icons: {
       icon: "/favicon.ico",
     },
@@ -48,14 +31,18 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const settings = await getSiteSettings();
+
   return (
     <html suppressHydrationWarning lang="en">
-      <head />
+      <head>
+        <meta name="referrer" content="no-referrer-when-downgrade" />
+      </head>
       <body
         className={clsx(
           "min-h-screen text-foreground bg-background font-sans antialiased",
@@ -63,30 +50,29 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex flex-col h-screen">
+          <div className="relative flex flex-col min-h-screen">
             <Navbar />
             <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
               {children}
             </main>
-            <footer className="w-full relative  border-default-200 dark:border-white/10 bg-default-50/50 dark:bg-black/20 backdrop-blur-lg mt-auto pt-16 pb-8">
+            <footer className="w-full relative border-default-200 dark:border-white/10 bg-default-50/50 dark:bg-black/20 backdrop-blur-lg mt-auto pt-16 pb-8">
               <div className="container mx-auto max-w-7xl px-6 flex flex-col gap-10">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   {/* Brand & Description */}
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-tr from-blue-600/20 to-purple-600/20 border border-default-200 dark:border-white/10 shadow-inner">
-                        <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-500 text-xs">
-                          CX
+                      <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-black/[0.05] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.08] overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-transparent to-violet-500/20 opacity-80" />
+                        <span className="relative font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-400 text-xs tracking-tighter uppercase">
+                          {settings.shortName || "14"}
                         </span>
                       </div>
                       <p className="font-bold text-lg tracking-wide uppercase">
-                        CODEX DEVELOPER
+                        {settings.name}
                       </p>
                     </div>
                     <p className="text-default-500 text-sm max-w-xs leading-relaxed">
-                      มิติใหม่ในการเขียนสคริปต์สำหรับเซิร์ฟเวอร์ของคุณ
-                      มุ่งเน้นการใช้งานที่ง่าย รวดเร็ว และปลอดภัย
-                      พร้อมส่งมอบคุณภาพระดับพรีเมียม
+                      {settings.description}
                     </p>
                   </div>
 
@@ -140,7 +126,7 @@ export default function RootLayout({
                         isExternal
                         aria-label="Discord Server"
                         className="w-10 h-10 rounded-full bg-default-100 dark:bg-white/5 border border-default-200 dark:border-white/10 flex items-center justify-center text-default-400 hover:text-default-500 transition-all shadow-lg "
-                        href="https://discord.gg/msc-fivem"
+                        href={settings.discordUrl || "https://discord.gg/msc-fivem"}
                       >
                         <svg
                           className="w-5 h-5"
@@ -157,13 +143,13 @@ export default function RootLayout({
                 {/* Copyright Line */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 mt-4 border-t border-default-200 dark:border-white/10">
                   <p className="text-sm text-default-500">
-                    © {new Date().getFullYear()} CodeX Developer. All rights
+                    © {new Date().getFullYear()} {settings.footerCopyright || settings.name}. All rights
                     reserved.
                   </p>
                   <p className="text-sm text-default-400 flex items-center gap-1">
                     Powered by{" "}
                     <span className="text-primary font-medium">
-                      MithG - NxiZ
+                      {settings.footerPoweredBy || "d14"}
                     </span>
                   </p>
                 </div>

@@ -12,10 +12,37 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID || "",
       clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+      issuer: "https://discord.com",
     }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Sync Discord profile picture & name on every login
+      // PrismaAdapter only saves these on first sign-up, so old URLs become 404
+      // user.image contains the OLD DB value, so we must build the fresh URL from profile
+      if (account?.provider === "discord" && user.id) {
+        try {
+          const discordProfile = profile as any;
+          const freshImage = discordProfile?.avatar
+            ? `https://cdn.discordapp.com/avatars/${discordProfile.id}/${discordProfile.avatar}.png`
+            : null;
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              image: freshImage,
+              name:
+                discordProfile?.global_name ||
+                discordProfile?.username ||
+                user.name ||
+                null,
+            },
+          });
+        } catch {
+          // User might not exist yet (first login), adapter will create it
+        }
+      }
+
       const adminDiscordId = process.env.ADMIN_DISCORD_ID;
 
       if (
